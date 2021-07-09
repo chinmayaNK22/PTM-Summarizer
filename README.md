@@ -4,7 +4,7 @@ The modified peptides and sites identified from proteome database search using P
 
 **How to run PTM-Summarizer:**
 ```
-PTM-Summarizer>python HumanRefSeq_GCF_000001405.39_GRCh38.p13_protein_refseq109_formated.fasta SARS_CoV2_Mulit-PTM_PSMs_PTMs.txt
+PTM-Summarizer>python PTM_summarizer.py HumanRefSeq_GCF_000001405.39_GRCh38.p13_protein_refseq109_formated.fasta SARS_CoV2_Mulit-PTM_PSMs_PTMs.txt
 ```
 The output of this tool consists of;
 1. List of modified site information for each modification in each protein (Infile_UniqueProteinSite.txt)
