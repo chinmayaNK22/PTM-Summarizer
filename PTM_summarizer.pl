@@ -94,7 +94,7 @@ while(<IN>)
 }	
 close IN;
 
-$outun = $infile; $outun =~s/\.txt$/\_UniqueProteinSite.txt/;
+my $outun = $infile; $outun =~s/\.txt$/\_UniqueProteinSite.txt/;
 open(OUTUNIQPRO,">$outun") or die "Could not create the file:$!\n";
 foreach my $k1 (keys %hashUniqPro)
 {
@@ -102,7 +102,7 @@ foreach my $k1 (keys %hashUniqPro)
 }
 close OUTUNIQPRO;
 
-$out1 = $infile; $out1 =~s/\.txt$/\_summary.txt/;
+my $out1 = $infile; $out1 =~s/\.txt$/\_summary.txt/;
 open(OUT1,">$out1") or die "Could not create the file:$!\n";
 foreach my $k1 (keys %hashCount)
 {
