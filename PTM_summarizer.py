@@ -1,8 +1,8 @@
 import os
 import argparse
+import modified_proteins_summ
 
-parser = argparse.ArgumentParser(description='''SSPE: Species Specific Peptide Extractor. Peptides list from the species specific input fasta file (Proteome) will be
-                                            generated and only those peptide sequences specific to a input fasta file (i.e. Species proteome) will be considered when compared with the other input proteome databases''')
+parser = argparse.ArgumentParser(description='''Summarize post-translationally modified amino acid sites, peptides and proteins for Proteome Discoverer output''')
 
 parser.add_argument('infile', metavar='-i', type=str, nargs='+', help='The input file should be PSMs table exported from Proteome Discoverer')
 
@@ -10,6 +10,10 @@ parser.add_argument('fasta', metavar='-fa', type=str, nargs='+', help='Proteome 
 
 args = parser.parse_args()
 
-cmd = 'perl PTM_summarizer.pl ' + args.fasta[0] + ' ' + args.infile[0]
-os.system(cmd)
-print (cmd)
+def run_ptm_summ(infile, fasta):
+    cmd = 'perl PTM_summarizer.pl ' + fasta + ' ' + infile
+    os.system(cmd)
+    print (cmd)
+
+run_ptm_summ(args.infile[0], args.fasta[0])
+
