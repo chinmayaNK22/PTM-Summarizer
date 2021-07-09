@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='''Summarize post-translationally m
 
 parser.add_argument('infile', metavar='-i', type=str, nargs='+', help='The input file should be PSMs table exported from Proteome Discoverer')
 
-parser.add_argument('fasta', metavar='-fa', type=str, nargs='+', help='Proteome database (FASTA) file used for the database search in Proteome Discoverer')
+parser.add_argument('fasta', metavar='-f', type=str, nargs='+', help='Proteome database (FASTA) file used for the database search in Proteome Discoverer')
 
 args = parser.parse_args()
 
