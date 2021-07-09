@@ -1,5 +1,13 @@
 from itertools import islice
-from collections import Counter 
+from collections import Counter
+import argparse
+
+parser = argparse.ArgumentParser(description='''Summarize the modification found in all the modified proteins''')
+
+parser.add_argument('infile', metavar='-i', type=str, nargs='+', help='Output file from PTM-Summarizer.pl')
+
+args = parser.parse_args()
+
 dicts = {}
 dicts1 = {}
 dicts2 = {}
@@ -21,8 +29,11 @@ def modification_summ(infile):
                 summary[split_i[-2]].append(split_i[1])
                 dicts2[split_i[-2]].append(1)
 
-file = 'SARS-CoV-2_Multi-PTM_Unique_Modification_Sites_062821.txt'
-modification_summ(file)
+if args.infile[0].split('_')[-1] == '_UniqueProteinSite.txt':
+    modification_summ(args.infile[0])
+else:
+    print ('ERROR: The input file in not correct.')
+#file = 'SARS-CoV-2_Multi-PTM_Unique_Modification_Sites_062821.txt'
 
 summ_output = [[k.split('_')[0], k.split('_')[1], str(len(v))] for k, v in summary.items()]
 summ_outfile = '{0}_Summary.txt'.format(file.rstrip('.txt'))
