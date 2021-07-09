@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #################### Usage ###########################
-###### perl PTM-Summarizer.pl ref.fasta PSM.txt ######
+###### perl PTM_summarizer.pl ref.fasta PSM.txt ######
 ######################################################
 
 use strict;
