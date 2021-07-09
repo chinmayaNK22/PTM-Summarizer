@@ -1,10 +1,14 @@
 #!/usr/bin/perl
 
+#################### Usage ###########################
+###### perl PTM-Summarizer.pl ref.fasta PSM.txt ######
+######################################################
+
 use strict;
 use warnings;
 
-my $ref_fasta="HumanRefSeq_GCF_000001405.39_GRCh38.p13_protein_refseq109_formated.fasta";
-my $infile="SARS_CoV2_Mulit-PTM_PSMs_PTMs.txt";
+my $ref_fasta=$ARGV[0];
+my $infile=$ARGV[1];
 
 my %hash=();
 my %hashCount=();
@@ -67,7 +71,8 @@ while(<IN>)
 								my $index = (index ($Proseq, $ann) + $pos);
 								#print OUT "$annSeq\t$mas\t$m\t$ty\t$aa\t$index\n";
 								my $uniqPro=$m."_".$ty."_".$aa."_".$index;
-								$hashUniqPro{$uniqPro}="$annSeq\t$m\t$ty\t$aa\t$index";
+								my $ty_aa = $ty."_".$aa;
+								$hashUniqPro{$uniqPro}="$annSeq\t$m\t$ty\t$aa\t$ty_aa\t$index";
 								#push(@allM_Pro,$ty);
 							}
 							unless(exists $hash{$k}{$ty})
@@ -89,14 +94,16 @@ while(<IN>)
 }	
 close IN;
 
-open(OUTUNIQPRO,">UniqueProteinSite.txt") or die "Could not create the file:$!\n";
+$outun = $infile; $outun =~s/\.txt$/\_UniqueProteinSite.txt/;
+open(OUTUNIQPRO,">$outun") or die "Could not create the file:$!\n";
 foreach my $k1 (keys %hashUniqPro)
 {
 	print OUTUNIQPRO "$hashUniqPro{$k1}\n";
 }
 close OUTUNIQPRO;
 
-open(OUT1,">summary.txt") or die "Could not create the file:$!\n";
+$out1 = $infile; $out1 =~s/\.txt$/\_summary.txt/;
+open(OUT1,">$out1") or die "Could not create the file:$!\n";
 foreach my $k1 (keys %hashCount)
 {
 	print OUT1 "$k1\n";
@@ -113,7 +120,7 @@ foreach my $k1 (keys %hashCount)
 close OUT1;
 
 my @unique = do { my %seen; grep { !$seen{$_}++ } @allM };
-open(OUT2,">ForUpset3.txt") or die "Could not create the file:$!\n";
+open(OUT2,">ForUpset.txt") or die "Could not create the file:$!\n";
 print OUT2 "Peptide";
 foreach (@unique)
 {
