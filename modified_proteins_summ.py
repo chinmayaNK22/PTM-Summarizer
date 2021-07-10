@@ -36,7 +36,7 @@ else:
 #file = 'SARS-CoV-2_Multi-PTM_Unique_Modification_Sites_062821.txt'
 
 summ_output = [[k.split('_')[0], k.split('_')[1], str(len(v))] for k, v in summary.items()]
-summ_outfile = '{0}_Summary.txt'.format(file.rstrip('.txt'))
+summ_outfile = '{0}_Summary.txt'.format(args.infile[0].rstrip('.txt'))
 with open(summ_outfile, 'w') as sumf:
     sumf.write('Modification\tAmino Acid\tTotal No. of modified sites\n')
     sumf.writelines('\t'.join(i) + '\n' for i in summ_output)
@@ -67,7 +67,7 @@ for k, v in dicts.items():
 
 header = [['Accession'] + list(dicts2) + ['Total No. of Modified Sites']]
 #print (header)
-outfile = '{0}_Modified_Proteins.txt'.format(file.rstrip('.txt'))
+outfile = '{0}_Modified_Proteins.txt'.format(args.infile[0].rstrip('.txt'))
 with open(outfile, 'w') as outf:
     outf.writelines('\t'.join(i) + '\n' for i in header)
     outf.writelines('\t'.join(i) + '\n' for i in output)
