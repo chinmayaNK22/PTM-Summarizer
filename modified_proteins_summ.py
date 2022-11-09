@@ -14,7 +14,6 @@ def modification_summ(inlist):
     dicts2 = {}
     summary = {}
     for i in inlist:
-        print (i)
         if i[1] not in dicts:
             dicts[i[1]] = [i[4]]
             #dicts1[split_i[1]] = [split_i[2] + '\t' + split_i[3] + '\t' + split_i[4] + '\t' + split_i[5].rstrip()]
