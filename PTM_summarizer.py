@@ -17,7 +17,10 @@ def get_header_idx(infile):
         for i in islice(file, 0, 1):
             split_i = i.rstrip().split('\t')
             try:
-                pep = split_i.index('"Annotated Sequence"')
+                try:
+                    pep = split_i.index('"Annotated Sequence"')
+                except:
+                    pep = split_i.index('"Sequence"')
                 pro = split_i.index('"Master Protein Accessions"')
                 mz = split_i.index('"m/z [Da]"')
                 scan = split_i.index('"First Scan"')
@@ -26,7 +29,10 @@ def get_header_idx(infile):
                 except :
                     raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
             except:
-                pep = split_i.index('Annotated Sequence')
+                try:
+                    pep = split_i.index('"Annotated Sequence"')
+                except:
+                    pep = split_i.index('"Sequence"')
                 pro = split_i.index('Master Protein Accessions')
                 mz = split_i.index('m/z [Da]')
                 scan = split_i.index('First Scan')
