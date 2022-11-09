@@ -16,7 +16,7 @@ def get_header_idx(infile):
     with open(infile) as file:
         for i in islice(file, 0, 1):
             split_i = i.rstrip().split('\t')
-            try:
+            if '"' in split_i[0]:
                 try:
                     pep = split_i.index('"Annotated Sequence"')
                 except:
@@ -28,7 +28,7 @@ def get_header_idx(infile):
                     prob_score = split_i.index('"ptmRS: Best Site Probabilities"')
                 except :
                     raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
-            except:
+            else:
                 try:
                     pep = split_i.index('Annotated Sequence')
                 except:
@@ -65,29 +65,38 @@ def parse_psm_file(infile):
             pro = split_i[a[1]].strip('"')
             mz = split_i[a[2]].strip('"')
             scan = split_i[a[3]].strip('"')
-            ptmrs_score = split_i[a[4]].strip('"')
-            if len(ptmrs_score) != 0:
-                if ';' in ptmrs_score:
-                    for mod_score in ptmrs_score.split(';'):
-                        AA, POS, MOD, SCORE = parse_ptmRS_score(mod_score.strip())
+            if a[4] <= len(split_i):
+                ptmrs_score = split_i[a[4]].strip('"')
+                if len(ptmrs_score) != 0:
+                    if ';' in ptmrs_score:
+                        for mod_score in ptmrs_score.split(';'):
+                            AA, POS, MOD, SCORE = parse_ptmRS_score(mod_score.strip())
+                            if float(SCORE) > 75.0:
+                                if MOD + '_' + AA not in modifications:
+                                    modifications[MOD + '_' + AA] = [split_i]
+                                else:
+                                    modifications[MOD + '_' + AA].append(split_i)
+                                mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
+                                
+                    elif ptmrs_score.strip() != 'Too many isoforms':
+                        AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
                         if float(SCORE) > 75.0:
                             if MOD + '_' + AA not in modifications:
                                 modifications[MOD + '_' + AA] = [split_i]
                             else:
                                 modifications[MOD + '_' + AA].append(split_i)
                             mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
-                            
-                elif ptmrs_score.strip() != 'Too many isoforms':
-                    AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
-                    if float(SCORE) > 75.0:
-                        if MOD + '_' + AA not in modifications:
-                            modifications[MOD + '_' + AA] = [split_i]
-                        else:
-                            modifications[MOD + '_' + AA].append(split_i)
-                        mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
 
     return mod_scores, modifications
 
+def parse_acc(header):
+    splitters = [' ','|']
+    acc_sep = []
+    for split in splitters:
+        acc_sep.append(header.index(split))
+        
+    return sorted(acc_sep)[0]
+    
 def map_to_protein(indict, infasta):
     output = {}
     for keys, values in indict.items():
@@ -95,7 +104,8 @@ def map_to_protein(indict, infasta):
         for rows in readfasta(infasta).read():
             header = rows[0]
             seq = rows[1]
-            acc = header.split('|')[0]
+            splitter = parse_acc(header)
+            acc = header[0:splitter]
             if mod_peps[0].upper() in seq and mod_peps[1] == acc:
                 if seq[seq.index(mod_peps[0].upper())+ (int(mod_peps[5])-1)] == mod_peps[4]:
                     output[mod_peps[0] +'@'+ mod_peps[1]+'@'+ mod_peps[-2]+'@'+ mod_peps[4]+'@'+ (mod_peps[-2] + '_' + mod_peps[4]) +'@'+ str(seq.index(mod_peps[0].upper()) + (int(mod_peps[5])-1))] = [keys]
