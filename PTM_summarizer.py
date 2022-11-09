@@ -1,6 +1,8 @@
+from itertools import islice
+from read_fasta_file_v2 import readfasta
 import os
-import argparse
 import modified_proteins_summ
+import argparse
 
 parser = argparse.ArgumentParser(description='''Summarize post-translationally modified amino acid sites, peptides and proteins for Proteome Discoverer output''')
 
@@ -10,10 +12,92 @@ parser.add_argument('fasta', metavar='-f', type=str, nargs='+', help='Proteome d
 
 args = parser.parse_args()
 
-def run_ptm_summ(infile, fasta):
-    cmd = 'perl PTM_summarizer.pl ' + fasta + ' ' + infile
-    os.system(cmd)
-    print (cmd)
+def get_header_idx(infile):
+    with open(infile) as file:
+        for i in islice(file, 0, 1):
+            split_i = i.rstrip().split('\t')
+            pep = split_i.index('"Annotated Sequence"')
+            pro = split_i.index('"Master Protein Accessions"')
+            mz = split_i.index('"m/z [Da]"')
+            scan = split_i.index('"First Scan"')
+            try:
+                prob_score = split_i.index('"ptmRS: Best Site Probabilities"')
+            except :
+                raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
 
-run_ptm_summ(args.infile[0], args.fasta[0])
+            return pep, pro, mz, scan, prob_score
 
+def parse_ptmRS_score(instring):
+    #print (instring)
+    try:
+        aa = instring[0]
+        pos = instring.split('(')[0].lstrip(aa)
+        mod = instring.split('(')[1].split(')')[0]
+        score = instring.split(':')[1].strip()
+        return aa, pos, mod, score
+    except:
+        print (instring)
+
+def parse_psm_file(infile):
+    a = get_header_idx(infile)
+    mod_scores = {}
+    with open(infile) as file:
+        for i in islice(file,1,None):
+            split_i = i.rstrip().split('\t')
+            pep = split_i[a[0]].strip('"').split('.')[1]
+            pro = split_i[a[1]].strip('"')
+            mz = split_i[a[2]].strip('"')
+            scan = split_i[a[3]].strip('"')
+            ptmrs_score = split_i[a[4]].strip('"')
+            if len(ptmrs_score) != 0:
+                if ';' in ptmrs_score:
+                    for mod_score in ptmrs_score.split(';'):
+                        AA, POS, MOD, SCORE = parse_ptmRS_score(mod_score.strip())
+                        if float(SCORE) > 75.0:
+                            mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
+                            
+                elif ptmrs_score.strip() != 'Too many isoforms':
+                    AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
+                    if float(SCORE) > 75.0:
+                        mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
+
+    return mod_scores
+
+def map_to_protein(indict, infasta):
+    output = {}
+    for keys, values in indict.items():
+        mod_peps = keys.split('@')
+        for rows in readfasta(infasta).read():
+            header = rows[0]
+            seq = rows[1]
+            acc = header.split('|')[0]
+            if mod_peps[0].upper() in seq and mod_peps[1] == acc:
+                if seq[seq.index(mod_peps[0].upper())+ (int(mod_peps[5])-1)] == mod_peps[4]:
+                    output[mod_peps[0] +'@'+ mod_peps[1]+'@'+ mod_peps[-2]+'@'+ mod_peps[4]+'@'+ (mod_peps[-2] + '_' + mod_peps[4]) +'@'+ str(seq.index(mod_peps[0].upper()) + (int(mod_peps[5])-1))] = [keys]
+                else:
+                    print ("Modified amino acid sequence ", mod_peps[0], " is not present in protein ", acc)
+
+    outputs = []
+    for k, v in output.items():
+        outputs.append(k.split('@'))
+
+    return outputs
+
+def write_to_file(outlist, infile):
+    outfile = "{0}_UniqueProteinSite.txt".format(infile.rstrip('txt').rstrip('.'))
+    with open(outfile, 'w') as outf:
+        outf.write('Peptide\tProtein\tModification\tAmino_Acid\tModified_Site\tPTM_Site(Protein)\n')
+        outf.writelines('\t'.join(i) + '\n' for i in outlist)
+
+def summarize_ptm(infile, infasta):
+    modified_psms = parse_psm_file(os.path.join(infile))
+    output = map_to_protein(modified_psms, os.path.join(infasta))
+    write_to_file(output, infile)
+    print (len(output))
+    if len(output) != 0:
+        modified_proteins_summ.summarize_ptms(infile, output)
+    else:
+        print ("No modifications were found with ptmRs probability score > 75")
+
+
+summarize_ptm(args.infile[0], args.fasta[0])
