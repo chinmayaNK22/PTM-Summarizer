@@ -16,14 +16,24 @@ def get_header_idx(infile):
     with open(infile) as file:
         for i in islice(file, 0, 1):
             split_i = i.rstrip().split('\t')
-            pep = split_i.index('"Annotated Sequence"')
-            pro = split_i.index('"Master Protein Accessions"')
-            mz = split_i.index('"m/z [Da]"')
-            scan = split_i.index('"First Scan"')
             try:
-                prob_score = split_i.index('"ptmRS: Best Site Probabilities"')
-            except :
-                raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
+                pep = split_i.index('"Annotated Sequence"')
+                pro = split_i.index('"Master Protein Accessions"')
+                mz = split_i.index('"m/z [Da]"')
+                scan = split_i.index('"First Scan"')
+                try:
+                    prob_score = split_i.index('"ptmRS: Best Site Probabilities"')
+                except :
+                    raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
+            except:
+                pep = split_i.index('Annotated Sequence')
+                pro = split_i.index('Master Protein Accessions')
+                mz = split_i.index('m/z [Da]')
+                scan = split_i.index('First Scan')
+                try:
+                    prob_score = split_i.index('ptmRS: Best Site Probabilities')
+                except :
+                    raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")                
 
             return pep, pro, mz, scan, prob_score
 
