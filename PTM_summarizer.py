@@ -41,6 +41,7 @@ def parse_ptmRS_score(instring):
 def parse_psm_file(infile):
     a = get_header_idx(infile)
     mod_scores = {}
+    modifications = {}
     with open(infile) as file:
         for i in islice(file,1,None):
             split_i = i.rstrip().split('\t')
@@ -54,14 +55,22 @@ def parse_psm_file(infile):
                     for mod_score in ptmrs_score.split(';'):
                         AA, POS, MOD, SCORE = parse_ptmRS_score(mod_score.strip())
                         if float(SCORE) > 75.0:
+                            if MOD + '_' + AA not in modifications:
+                                modifications[MOD + '_' + AA] = [split_i]
+                            else:
+                                modifications[MOD + '_' + AA].append(split_i)
                             mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
                             
                 elif ptmrs_score.strip() != 'Too many isoforms':
                     AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
                     if float(SCORE) > 75.0:
+                        if MOD + '_' + AA not in modifications:
+                            modifications[MOD + '_' + AA] = [split_i]
+                        else:
+                            modifications[MOD + '_' + AA].append(split_i)
                         mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
 
-    return mod_scores
+    return mod_scores, modifications
 
 def map_to_protein(indict, infasta):
     output = {}
@@ -89,9 +98,23 @@ def write_to_file(outlist, infile):
         outf.write('Peptide\tProtein\tModification\tAmino_Acid\tModified_Site\tPTM_Site(Protein)\n')
         outf.writelines('\t'.join(i) + '\n' for i in outlist)
 
+def write_mod_files(mod_dicts, infile):
+    header = open(infile).readline().rstrip().split('\t')
+    for k, v in mod_dicts.items():
+        outfile = infile.rstrip('txt').rstrip('.') + '_' + k + '.txt'
+        with open(outfile, 'w') as outf:
+            outf.write('\t'.join(header) + '\n')
+            outf.writelines('\t'.join(i) + '\n' for i in v)
+
 def summarize_ptm(infile, infasta):
-    modified_psms = parse_psm_file(os.path.join(infile))
+    modified_psms, mod_psms = parse_psm_file(os.path.join(infile))
+
+    ### Write modification specific PSMs to seperate files based on ptmRS probability threshold
+    write_mod_files(mod_psms, infile)
+
+    ### Map modified peptides to proteins and fetch modification site at protein level
     output = map_to_protein(modified_psms, os.path.join(infasta))
+    
     write_to_file(output, infile)
     print (len(output))
     if len(output) != 0:
