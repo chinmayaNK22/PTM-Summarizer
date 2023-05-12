@@ -1,43 +1,73 @@
 from itertools import islice
 from collections import Counter
-##import argparse
-##
-##parser = argparse.ArgumentParser(description='''Summarize the modification found in all the modified proteins''')
-##
-##parser.add_argument('infile', metavar='-i', type=str, nargs='+', help='Output file from PTM-Summarizer.pl')
-##
-##args = parser.parse_args()
 
+def for_upsetplot(inlist, infile):
+    ''' Generate a input for UpSet plot on number of modified protein sites '''
+    mods = {}
+    dicts = {}
+    for i in inlist:
+        for idx, j in enumerate(i[-1].split(';')):
+            pep_pos = str(i[-1].split(';')[idx])
+            aa = i[-3].split(';')[idx]
+            mod = i[2].split(';')[idx]
+            if i[1] + '_' + pep_pos not in dicts:
+                dicts[i[1] + '_' + pep_pos] = [mod + '_' + aa]
+            else:
+                dicts[i[1] + '_' + pep_pos].append(mod + '_' + aa)
+
+            mods[mod + '_' + aa] = mod
+
+    outfile = "{0}_UpSet.txt".format(infile.rstrip('txt').rstrip('.'))
+    header = ['Protein_Site'] + list(mods)
+    with open(outfile, 'w') as outf:
+        outf.write('\t'.join(header) + '\n')
+        for k, v in dicts.items():
+            nr_mod = {j:j for j in v}
+            val = []
+            for mod in list(mods):
+                if mod in nr_mod:
+                    val.append(str(1))
+                else:
+                    val.append(str(0))
+
+            
+            outf.write(k + '\t' + '\t'.join(val) + '\n')
+        
 def modification_summ(inlist):
+    ''' Summarize the information on number of modifications and protein sites '''
     dicts = {}
     dicts1 = {}
     dicts2 = {}
     summary = {}
     for i in inlist:
+        for idx, j in enumerate(i[-1].split(';')):
+            aa = i[-3].split(';')
+            mods = i[2].split(';')
+            mod_aa = mods[idx] + '_' + aa[idx]
+            
         if i[1] not in dicts:
-            dicts[i[1]] = [i[4]]
-            #dicts1[split_i[1]] = [split_i[2] + '\t' + split_i[3] + '\t' + split_i[4] + '\t' + split_i[5].rstrip()]
+            dicts[i[1]] = [mod_aa]  
         else:
-            dicts[i[1]].append(i[4])
-            #dicts1[split_i[1]].append(split_i[2] + '\t' + split_i[3] + '\t' + split_i[4] + '\t' + split_i[5].rstrip())
-        if i[-2] not in dicts2:
-            summary[i[-2]] = [i[1]] 
-            dicts2[i[-2]] = [1]
+            dicts[i[1]].append(mod_aa)
+            
+        if mod_aa not in dicts2:
+            summary[mod_aa] = [i[1]] 
+            dicts2[mod_aa] = [1]
         else:
-            summary[i[-2]].append(i[1])
-            dicts2[i[-2]].append(1)
+            summary[mod_aa].append(i[1])
+            dicts2[mod_aa].append(1)
             
     return summary, dicts, dicts2
 
-##if args.infile[0].split('_')[-1] == '_UniqueProteinSite.txt':
-##    modification_summ(args.infile[0])
-##else:
-##    print ('ERROR: The input file in not correct.')
-###file = 'SARS-CoV-2_Multi-PTM_Unique_Modification_Sites_062821.txt'
 
 def summarize_ptms(infile, inlist):
+    
     summary, proteins, modifications = modification_summ(inlist)
+    
+    for_upsetplot(inlist, infile)
+    
     summ_output = [[k.split('_')[0], k.split('_')[1], str(len(v))] for k, v in summary.items()]
+    
     summ_outfile = '{0}_Summary.txt'.format(infile.rstrip('txt').rstrip('.'))
     with open(summ_outfile, 'w') as sumf:
         sumf.write('Modification\tAmino Acid\tTotal No. of modified sites\n')
