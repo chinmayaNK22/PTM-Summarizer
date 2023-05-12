@@ -30,7 +30,7 @@ def get_header_idx(infile):
                     raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
             else:
                 try:
-                    pep = split_i.index('Annotated Sequence')
+                    pep = split_i.index("Annotated Sequence")
                 except:
                     pep = split_i.index('Sequence')
                 pro = split_i.index('Master Protein Accessions')
@@ -68,25 +68,33 @@ def parse_psm_file(infile):
             if a[4] <= len(split_i):
                 ptmrs_score = split_i[a[4]].strip('"')
                 if len(ptmrs_score) != 0:
+                    new_mod_score = {}
                     if ';' in ptmrs_score:
                         for mod_score in ptmrs_score.split(';'):
                             AA, POS, MOD, SCORE = parse_ptmRS_score(mod_score.strip())
                             if float(SCORE) > 75.0:
+                                new_mod_score[AA + POS + '(' + MOD + '): ' + SCORE] = mod_score
                                 if MOD + '_' + AA not in modifications:
                                     modifications[MOD + '_' + AA] = [split_i]
                                 else:
                                     modifications[MOD + '_' + AA].append(split_i)
-                                mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
-                                
+                                #mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
+           
                     elif ptmrs_score.strip() != 'Too many isoforms':
                         AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
                         if float(SCORE) > 75.0:
+                            new_mod_score[AA + POS + '(' + MOD + '): ' + SCORE] = ptmrs_score
                             if MOD + '_' + AA not in modifications:
                                 modifications[MOD + '_' + AA] = [split_i]
                             else:
                                 modifications[MOD + '_' + AA].append(split_i)
-                            mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
+                            #mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
 
+                    final_score = {k:v for k, v in new_mod_score.items() if len(k) != 0}
+                    score_col = ';'.join(list(final_score))
+                    if len(score_col) != 0:
+                        mod_scores[pep + '@' + pro + '@' + mz + '@' + score_col] = [split_i]
+                        
     return mod_scores, modifications
 
 def parse_acc(header):
@@ -99,18 +107,53 @@ def parse_acc(header):
     
 def map_to_protein(indict, infasta):
     output = {}
-    for keys, values in indict.items():
-        mod_peps = keys.split('@')
-        for rows in readfasta(infasta).read():
-            header = rows[0]
-            seq = rows[1]
-            splitter = parse_acc(header)
-            acc = header[0:splitter]
-            if mod_peps[0].upper() in seq and mod_peps[1] == acc:
-                if seq[seq.index(mod_peps[0].upper())+ (int(mod_peps[5])-1)] == mod_peps[4]:
-                    output[mod_peps[0] +'@'+ mod_peps[1]+'@'+ mod_peps[-2]+'@'+ mod_peps[4]+'@'+ (mod_peps[-2] + '_' + mod_peps[4]) +'@'+ str(seq.index(mod_peps[0].upper()) + (int(mod_peps[5])-1))] = [keys]
-                else:
-                    print ("Modified amino acid sequence ", mod_peps[0], " is not present in protein ", acc)
+    for rows in readfasta(infasta).read():
+        header = rows[0]
+        seq = rows[1]
+        splitter = parse_acc(header)
+        acc = header[0:splitter]
+        for keys, values in indict.items():
+            mod_peps = keys.split('@')
+            if ';' in mod_peps[1]:
+                for pro in mod_peps[1].split(';'):
+                    if acc == pro:
+                        if mod_peps[0].upper() in seq:
+                            pep_pos = []
+                            pro_pos = []
+                            aa = []
+                            mods = []
+                            for best_ptmrs in mod_peps[3].split(';'):
+                                AA, POS, MOD, SCORE = parse_ptmRS_score(mod_peps[3])
+                                if seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)] == AA:
+                                    pep_pos.append(str(POS))
+                                    pro_pos.append(str(seq.index(mod_peps[0].upper())+ (int(POS)-1)))
+                                    aa.append(seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
+                                    mods.append(MOD)
+                                    
+                            output[mod_peps[0] + '@' + mod_peps[1] + '@' +  ';'.join(mods) + '@' + ';'.join(aa) + '@' + ';'.join(pep_pos) + '@' + ';'.join(pro_pos)] = [keys]
+                            
+                            #if seq[seq.index(mod_peps[0].upper())+ (int(mod_peps[5])-1)] == AA:
+                            #    output[mod_peps[0] +'@'+ mod_peps[1] +'@'+ mod_peps[-2]+'@'+ mod_peps[4]+'@'+ (mod_peps[-2] + '_' + mod_peps[4]) +'@'+ str(seq.index(mod_peps[0].upper()) + (int(mod_peps[5])-1))] = [keys]
+                            #else:
+                            #    print ("Modified amino acid sequence ", mod_peps[0], " is not present in protein ", acc)
+            else:
+                if acc == mod_peps[1]:
+                    if mod_peps[0].upper() in seq:
+                        pep_pos = []
+                        pro_pos = []
+                        aa = []
+                        mods = []
+                        for best_ptmrs in mod_peps[3].split(';'):
+                            AA, POS, MOD, SCORE = parse_ptmRS_score(best_ptmrs)
+                            if seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)] == AA:
+                                pep_pos.append(str(POS))
+                                pro_pos.append(str(seq.index(mod_peps[0].upper())+ (int(POS)-1)))
+                                aa.append(seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
+                                mods.append(MOD)
+                                #print (mod_peps[0], mod_peps[-1], POS, seq.index(mod_peps[0].upper())+ (int(POS)-1), seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
+                                          
+                        output[mod_peps[0] + '@' + mod_peps[1] + '@' +  ';'.join(mods) + '@' + ';'.join(aa) + '@' + ';'.join(pep_pos) + '@' + ';'.join(pro_pos)] = [keys]
+                
 
     outputs = []
     for k, v in output.items():
@@ -121,7 +164,7 @@ def map_to_protein(indict, infasta):
 def write_to_file(outlist, infile):
     outfile = "{0}_UniqueProteinSite.txt".format(infile.rstrip('txt').rstrip('.'))
     with open(outfile, 'w') as outf:
-        outf.write('Peptide\tProtein\tModification\tAmino_Acid\tModified_Site\tPTM_Site(Protein)\n')
+        outf.write('Peptide\tProtein\tModification\tAmino_Acid\tModified_Site (Peptide)\tPTM_Site(Protein)\n')
         outf.writelines('\t'.join(i) + '\n' for i in outlist)
 
 def write_mod_files(mod_dicts, infile):
