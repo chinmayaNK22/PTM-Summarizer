@@ -126,7 +126,7 @@ def map_to_protein(indict, infasta):
                                 AA, POS, MOD, SCORE = parse_ptmRS_score(mod_peps[3])
                                 if seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)] == AA:
                                     pep_pos.append(str(POS))
-                                    pro_pos.append(str(seq.index(mod_peps[0].upper())+ (int(POS)-1)))
+                                    pro_pos.append(str(seq.index(mod_peps[0].upper())+ int(POS)))
                                     aa.append(seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
                                     mods.append(MOD)
                                     
@@ -147,7 +147,7 @@ def map_to_protein(indict, infasta):
                             AA, POS, MOD, SCORE = parse_ptmRS_score(best_ptmrs)
                             if seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)] == AA:
                                 pep_pos.append(str(POS))
-                                pro_pos.append(str(seq.index(mod_peps[0].upper())+ (int(POS)-1)))
+                                pro_pos.append(str(seq.index(mod_peps[0].upper())+ int(POS)))
                                 aa.append(seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
                                 mods.append(MOD)
                                 #print (mod_peps[0], mod_peps[-1], POS, seq.index(mod_peps[0].upper())+ (int(POS)-1), seq[seq.index(mod_peps[0].upper())+ (int(POS)-1)])
