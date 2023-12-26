@@ -80,7 +80,7 @@ def parse_psm_file(infile):
                                     modifications[MOD + '_' + AA].append(split_i)
                                 #mod_scores[pep + '@' + pro + '@' + mz + '@' + scan + '@' + AA + '@' + POS + '@' + MOD + '@' + SCORE] = [split_i]
            
-                    elif ptmrs_score.strip() != 'Too many isoforms':
+                    elif ptmrs_score.strip() != 'Too many isoforms' or ptmrs_score.strip() != 'Inconclusive data':
                         AA, POS, MOD, SCORE = parse_ptmRS_score(ptmrs_score.strip())
                         if float(SCORE) > 75.0:
                             new_mod_score[AA + POS + '(' + MOD + '): ' + SCORE] = ptmrs_score
