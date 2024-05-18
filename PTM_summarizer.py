@@ -101,8 +101,11 @@ def parse_acc(header):
     splitters = [' ','|']
     acc_sep = []
     for split in splitters:
-        acc_sep.append(header.index(split))
-        
+        try:
+            acc_sep.append(header.index(split))
+        except:
+            pass
+
     return sorted(acc_sep)[0]
     
 def map_to_protein(indict, infasta):
