@@ -99,22 +99,34 @@ def parse_psm_file(infile):
 
 def parse_acc(header):
     splitters = [' ','|']
-    acc_sep = []
+    acc_sep = {}
     for split in splitters:
         try:
-            acc_sep.append(header.index(split))
+            sep_pos = header.index(split)
+            acc_sep[sep_pos] = split
         except:
             pass
 
-    return sorted(acc_sep)[0]
+    sep_poss = sorted(acc_sep)
     
+    if header[0:sep_poss[0]] == 'gi':
+        accession = header.split(acc_sep[sep_poss[0]])[1]
+        return accession
+        
+    elif header[0:sep_poss[0]] == 'sp':
+        aaccession = header.split(acc_sep[sep_poss[0]])[1]
+        return accession
+
+    else:
+        accession = header[0:splitter]
+        return accession
+
 def map_to_protein(indict, infasta):
     output = {}
     for rows in readfasta(infasta).read():
         header = rows[0]
         seq = rows[1]
-        splitter = parse_acc(header)
-        acc = header[0:splitter]
+        acc = parse_acc(header)
         for keys, values in indict.items():
             mod_peps = keys.split('@')
             if ';' in mod_peps[1]:
