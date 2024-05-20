@@ -118,7 +118,7 @@ def parse_acc(header):
         return accession
 
     else:
-        accession = header[0:splitter]
+        accession = header[0:sep_poss[0]]
         return accession
 
 def map_to_protein(indict, infasta):
