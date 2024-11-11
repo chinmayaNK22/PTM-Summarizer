@@ -30,7 +30,7 @@ def get_header_idx(infile):
                     raise ("ERORR: There is no ptmRS: Best Site Probabilities column present in the file")
             else:
                 try:
-                    pep = split_i.index("Annotated Sequence")
+                    pep = split_i.index('Annotated Sequence')
                 except:
                     pep = split_i.index('Sequence')
                 pro = split_i.index('Master Protein Accessions')
@@ -200,7 +200,7 @@ def summarize_ptm(infile, infasta):
     output = map_to_protein(modified_psms, os.path.join(infasta))
     
     write_to_file(output, infile)
-    print (len(output))
+    print (f"Total number of modified sites: {len(output)}")
     if len(output) != 0:
         modified_proteins_summ.summarize_ptms(infile, output)
     else:
